@@ -74,6 +74,14 @@ function openAppNode(item) {
   const pageId = item.getAttribute('data-page');
   const page = document.getElementById(`page-${pageId}`);
   if (page) {
+    // Add history state so mobile back button closes the section
+    history.pushState({ page: pageId }, '', '#' + pageId);
+
+    // Ensure other pages are closed (just in case)
+    document.querySelectorAll('.section-page.active').forEach(p => {
+      p.classList.remove('active');
+    });
+
     page.classList.add('active');
     page.scrollTop = 0;
   }
@@ -98,11 +106,37 @@ document.querySelectorAll('.app-item[data-page]').forEach(item => {
 document.querySelectorAll('.back-btn[data-back]').forEach(btn => {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
-    const page = btn.closest('.section-page');
-    if (page) {
-      page.classList.remove('active');
+    // Use history back to maintain clean history stack
+    if (window.location.hash) {
+      history.back();
+    } else {
+      // Fallback
+      const page = btn.closest('.section-page');
+      if (page) {
+        page.classList.remove('active');
+      }
     }
   });
+});
+
+// Handle browser/hardware back button
+window.addEventListener('popstate', (e) => {
+  if (e.state && e.state.page) {
+    // Open the specific page from history state
+    document.querySelectorAll('.section-page.active').forEach(p => {
+      p.classList.remove('active');
+    });
+    const page = document.getElementById(`page-${e.state.page}`);
+    if (page) {
+      page.classList.add('active');
+      page.scrollTop = 0;
+    }
+  } else {
+    // Return to home screen, close all active pages
+    document.querySelectorAll('.section-page.active').forEach(p => {
+      p.classList.remove('active');
+    });
+  }
 });
 
 // ===== NEURAL NETWORK CANVAS ANIMATION =====
