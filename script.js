@@ -70,9 +70,25 @@ lockBtn.addEventListener('click', (e) => {
 });
 
 // ===== APP NAVIGATION =====
-function openAppNode(item) {
+async function openAppNode(item) {
   const pageId = item.getAttribute('data-page');
-  const page = document.getElementById(`page-${pageId}`);
+  let page = document.getElementById(`page-${pageId}`);
+
+  if (!page) {
+    try {
+      const resp = await fetch(`${pageId}.html`);
+      if (!resp.ok) throw new Error('Page not found');
+      const htmlText = await resp.text();
+
+      const container = document.getElementById('dynamicPageContainer');
+      container.insertAdjacentHTML('beforeend', htmlText);
+      page = document.getElementById(`page-${pageId}`);
+    } catch (e) {
+      console.error('Error loading page:', e);
+      return;
+    }
+  }
+
   if (page) {
     // Add history state so mobile back button closes the section
     history.pushState({ page: pageId }, '', '#' + pageId);
@@ -82,8 +98,11 @@ function openAppNode(item) {
       p.classList.remove('active');
     });
 
-    page.classList.add('active');
-    page.scrollTop = 0;
+    // Timeout allows CSS transition to trigger if element was just added to DOM
+    setTimeout(() => {
+      page.classList.add('active');
+      page.scrollTop = 0;
+    }, 10);
   }
 }
 
@@ -102,9 +121,10 @@ document.querySelectorAll('.app-item[data-page]').forEach(item => {
   });
 });
 
-// Back buttons
-document.querySelectorAll('.back-btn[data-back]').forEach(btn => {
-  btn.addEventListener('click', (e) => {
+// Back buttons - Event Delegation
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.back-btn[data-back]');
+  if (btn) {
     e.stopPropagation();
     // Use history back to maintain clean history stack
     if (window.location.hash) {
@@ -116,20 +136,36 @@ document.querySelectorAll('.back-btn[data-back]').forEach(btn => {
         page.classList.remove('active');
       }
     }
-  });
+  }
 });
 
 // Handle browser/hardware back button
-window.addEventListener('popstate', (e) => {
+window.addEventListener('popstate', async (e) => {
   if (e.state && e.state.page) {
     // Open the specific page from history state
     document.querySelectorAll('.section-page.active').forEach(p => {
       p.classList.remove('active');
     });
-    const page = document.getElementById(`page-${e.state.page}`);
+
+    let page = document.getElementById(`page-${e.state.page}`);
+    if (!page) {
+      try {
+        const resp = await fetch(`${e.state.page}.html`);
+        if (resp.ok) {
+          const htmlText = await resp.text();
+          document.getElementById('dynamicPageContainer').insertAdjacentHTML('beforeend', htmlText);
+          page = document.getElementById(`page-${e.state.page}`);
+        }
+      } catch (err) {
+        console.error('Error loading page on popstate:', err);
+      }
+    }
+
     if (page) {
-      page.classList.add('active');
-      page.scrollTop = 0;
+      setTimeout(() => {
+        page.classList.add('active');
+        page.scrollTop = 0;
+      }, 10);
     }
   } else {
     // Return to home screen, close all active pages
