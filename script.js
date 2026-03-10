@@ -409,3 +409,121 @@ nextBtns.forEach(btn => {
 // Initialize
 loadTrack(0);
 
+// ===== DESKTOP TERMINAL ANIMATION =====
+const terminalBody = document.getElementById('terminalBody');
+
+const terminalLines = [
+  { text: "sys_admin@ayush-portfolio:~# ./init_system.sh", type: "cmd" },
+  { text: "[ OK ] Loading neural network modules...", type: "info" },
+  { text: "[ OK ] Establishing secure connection to server...", type: "info" },
+  { text: "[WARN] Unrecognized entity detected in sector 429.", type: "warn" },
+  { text: "Bypassing security protocols...", type: "info" },
+  { text: "Access GRANTED.", type: "cmd" },
+  { text: "sys_admin@ayush-portfolio:~# python3 load_portfolio.py", type: "cmd" },
+  { text: "Loading Ayush Singh's Data Research Profile...", type: "info" },
+  { text: "--> Algorithm Analysis: 100%", type: "info" },
+  { text: "--> Frontend Architecture: Optimized", type: "info" },
+  { text: "--> ML Models: Calibrated", type: "info" },
+  { text: "System ready. Awaiting user input.", type: "cmd" }
+];
+
+let termLineIdx = 0;
+let isTypingTerm = false;
+
+function addTerminalLine(lineObj) {
+  const lineEl = document.createElement('div');
+  lineEl.className = 'terminal-line';
+  if (lineObj.type === 'cmd') lineEl.classList.add('terminal-cmd');
+  if (lineObj.type === 'warn') lineEl.classList.add('terminal-warn');
+  if (lineObj.type === 'err') lineEl.classList.add('terminal-err');
+
+  terminalBody.appendChild(lineEl);
+
+  let charIdx = 0;
+  isTypingTerm = true;
+
+  function typeChar() {
+    if (charIdx < lineObj.text.length) {
+      lineEl.textContent += lineObj.text.charAt(charIdx);
+      charIdx++;
+      terminalBody.scrollTop = terminalBody.scrollHeight;
+      setTimeout(typeChar, Math.random() * 30 + 20); // typing speed
+    } else {
+      isTypingTerm = false;
+      setTimeout(processNextTermLine, Math.random() * 800 + 200);
+    }
+  }
+
+  typeChar();
+}
+
+function processNextTermLine() {
+  if (termLineIdx < terminalLines.length && !isTypingTerm) {
+    addTerminalLine(terminalLines[termLineIdx]);
+    termLineIdx++;
+  } else if (termLineIdx >= terminalLines.length) {
+    // Loop back after a long delay
+    setTimeout(() => {
+      terminalBody.innerHTML = '';
+      termLineIdx = 0;
+      processNextTermLine();
+    }, 10000);
+  }
+}
+
+// Start terminal animation if screen is large enough
+if (window.innerWidth >= 1100 && terminalBody) {
+  setTimeout(processNextTermLine, 1000);
+}
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth >= 1100 && termLineIdx === 0 && !isTypingTerm && terminalBody) {
+    processNextTermLine();
+  }
+});
+
+// ===== DRAGGABLE PHONE FRAME (Desktop) =====
+const dragHandle = document.getElementById('dragHandle');
+let isDraggingPhone = false;
+let startPhoneX = 0, startPhoneY = 0;
+let translatePhoneX = 0, translatePhoneY = 0;
+let currentTranslatePhoneX = 0, currentTranslatePhoneY = 0;
+
+if (dragHandle && phoneFrame) {
+  dragHandle.addEventListener('mousedown', (e) => {
+    if (window.innerWidth <= 430) return; // Disable on mobile
+    isDraggingPhone = true;
+    startPhoneX = e.clientX;
+    startPhoneY = e.clientY;
+    e.preventDefault(); // Prevent text selection
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDraggingPhone) return;
+    const dx = e.clientX - startPhoneX;
+    const dy = e.clientY - startPhoneY;
+
+    currentTranslatePhoneX = translatePhoneX + dx;
+    currentTranslatePhoneY = translatePhoneY + dy;
+
+    phoneFrame.style.transform = `translate(${currentTranslatePhoneX}px, ${currentTranslatePhoneY}px)`;
+    phoneFrame.style.cursor = 'grabbing';
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!isDraggingPhone) return;
+    isDraggingPhone = false;
+    translatePhoneX = currentTranslatePhoneX;
+    translatePhoneY = currentTranslatePhoneY;
+    phoneFrame.style.cursor = 'pointer';
+  });
+
+  // Handle case where mouse leaves the window entirely
+  window.addEventListener('mouseleave', () => {
+    if (!isDraggingPhone) return;
+    isDraggingPhone = false;
+    translatePhoneX = currentTranslatePhoneX;
+    translatePhoneY = currentTranslatePhoneY;
+    phoneFrame.style.cursor = 'pointer';
+  });
+}
